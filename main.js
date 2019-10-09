@@ -18,26 +18,67 @@ module.exports = add;
 
 function printReceipt(barcodes){
     if(checkBarcodes(barcodes)){
-        return generateReceipt(barcodes);
+        return createReceipt(barcodes);
     }
+    return null;
 }
 
 function checkBarcodes(barcodes){
     for(var x = 0; x < barcodes.length; x++){
-        if(productDatabase.filter(result => result.id == barcodes[x]).length == null){
+        if(productDatabase.filter(result => result.id == barcodes[x]).length == 0){   
             return false;
         }
     }
     return true;
 }
 
-function generateReceipt(barcodes){
+function createReceipt(barcodes){
     var barcodeCollections = [];
+    var countedBarcodes = [];
     var currentBarcode = '';
+    var product = '';
+    var price = 0;
+    var total = 0;
+    var receipt = '';
     for(var x = 0; x < barcodes.length; x++){
-        if(currentBarcode == ''){
-            currentBarcode = barcodes[x];
-            
+        currentBarcode = barcodes[x];
+        if(countedBarcodes.indexOf(currentBarcode) == -1){
+            productDatabase.forEach(element => {
+                if(element.id == currentBarcode){
+                    product = element.name;
+                    price = element.price;
+                }
+            });
+            barcodeCollections.push({barcode: currentBarcode, productName: product, priceValue: price, count: countBarcodesPresented(barcodes, currentBarcode)});
+            countedBarcodes.push(currentBarcode);
         }
     }
+    barcodeCollections.sort((a, b) => (a.barcode > b.barcode) ? 1 : -1)
+    receipt = 'Receipts\n' + 
+    '------------------------------------------------------------\n';
+    for(var y = 0; y < barcodeCollections.length; y++){
+        receipt += setProductLine(barcodeCollections[y].productName, barcodeCollections[y].priceValue, barcodeCollections[y].count) + '\n';
+        total += barcodeCollections[y].priceValue * barcodeCollections[y].count;
+    }
+    receipt += '------------------------------------------------------------\n' +
+    'Price: ' + total;
+    return receipt;
+}
+
+function countBarcodesPresented(barcodes, currentBarcode){
+    return barcodes.filter(result => result == currentBarcode).length;
+}
+
+function setProductLine(productName, price, count){
+    var productLine = productName;
+    for(var x = 0; x <= 31 - productName.length; x++){
+        productLine += ' ';
+    }
+    productLine += price;
+    for(x = productLine.length; x < 43; x++){
+        productLine += ' ';
+    }
+    productLine += count;
+    
+    return productLine;
 }
